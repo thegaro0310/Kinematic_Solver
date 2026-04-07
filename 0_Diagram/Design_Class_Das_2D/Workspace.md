@@ -1,0 +1,1 @@
+Use this class for workspace initialization, this would help to setup a new workspace
