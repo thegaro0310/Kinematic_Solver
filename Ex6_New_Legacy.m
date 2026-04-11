@@ -10,8 +10,7 @@
 
 clear all;
 close all;
-% addpath(genpath('D:\Project\BCM_Method_Ultilize_DAS_2D\DAS_2D_3D\version0_90\2DNEW\'));
-addpath(genpath('D:\Project\BCM_Method_Ultilize_DAS_2D\KHOI_2D\'));
+addpath(genpath('D:\Project\BCM_Method_Ultilize_DAS_2D\Kinematic_Solver\'));
 
 %% Workspace Initialization
 %first you need to create a workspace
@@ -61,12 +60,10 @@ end
 %Input 2 - out-plane width
 %Input 3 - E
 %Input 4 - type (BeamType.PRB,BeamType.CBCM,BeamType.Mlinear)
-prb3r = [0.1000 Inf Inf; 0.3500 3.5100 Inf; 0.4000 2.9900 Inf; 0.1500 2.5800 Inf;];
-for i=3:3
-    links(i) = links(i).makeCompliant(1, 0.5, 69, BeamType.PRB);
-    links(i).geometry.prbModel = prb3r;
+for i=1:3
+    links(i) = links(i).makeCompliant(1, 0.5, 69, BeamType.CBCM);
+    links(i).geometry.segments = 1; % Use a single segment CBCM continuous element
 end
-%set the prb model
 
 
 %% Moments Initialization
@@ -99,8 +96,7 @@ forces(1) = Force(1, 2, 1.0, 0, 1.0, 0, 100, 0);
 %Input 4 - moments
 %Input 5 - torsion springs
 %Input 6 - workspace
-% analysis=DistanceAnalysis(links,nodes,forces,[],[],currentWorkspace);
-analysis=DistanceAnalysis(links,nodes,[],moments,[],currentWorkspace);
+analysis=DistanceAnalysis(links,nodes,forces,[],[],currentWorkspace);
 
 % Number of simulation steps
 numSteps = 10;
@@ -112,8 +108,12 @@ computed_forces = zeros(numSteps,1);
 %select the unknown load (in distance analysis, load to be computed should be made unknown)
 %Input 1 - id
 %Input 2 - type - 'force', 'moment'
-% analysis=analysis.selectLoad(1,'force');
-analysis=analysis.selectLoad(1,'moment');
+analysis=analysis.selectLoad(1,'force');
+
+disp('Starting Legacy Distance Analysis...');
+
+% Start timing the solver
+t_start = tic;
 
 % Run analysis for multiple steps
 for i = 1:numSteps
@@ -122,8 +122,8 @@ for i = 1:numSteps
     %Input 2 - magnitude
     %Input 3 - type - 'angle', 'x', 'y'
     %Input 4 - links
-    % analysis=analysis.addInput(3, 2 * i / numSteps, 'x', links);
-    analysis=analysis.addInput(1, 20 * i / numSteps, 'angle', links);
+    targetDisp = 2 * i / numSteps;
+    analysis=analysis.addInput(3, targetDisp, 'x', links);
 
     %plot the problem
     figure(1)
@@ -137,16 +137,19 @@ for i = 1:numSteps
     %Input 1 - workspace
     analysis=analysis.simulationNoGUI(currentWorkspace);
     % Store results
-    displacements(i) = analysis.distance.target(1, 2); % Get applied displacement
+    displacements(i) = targetDisp; % Get applied displacement
     computed_forces(i) = analysis.newValues.newValue; % Get computed force/moment
+    fprintf('Step %d: Required Force = %.3f N, Target Displ = %.3f mm\n', i, computed_forces(i), displacements(i));
 end
+
+% End timing the solver
+elapsedTime = toc(t_start);
+fprintf('Legacy Distance Analysis completed in %.3f seconds.\n', elapsedTime);
+
 % Plot Force-Displacement Curve
 figure(99);
 plot(displacements, computed_forces, 'bo-', 'LineWidth', 2);
-% xlabel('Displacement (mm)');
-xlabel('Angle (rad)');
-% ylabel('Force (N)');
-ylabel('Moment (Nmm)');
-% title('Force-Displacement Curve');
-title('Moment-Angle Curve');
+xlabel('Displacement (mm)');
+ylabel('Force (N)');
+title('Force-Displacement Curve (Legacy)');
 grid on;

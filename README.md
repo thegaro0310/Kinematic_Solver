@@ -198,21 +198,27 @@ The biggest technical achievement inside this file is the immense amount of calc
 * The Hessian: The hessianfcn builds the exact second-derivative matrix (the Tangent Stiffness Matrix) of the entire system.
 By feeding the exact Gradients and Hessian directly into fmincon, the solver can aggressively jump to the minimum energy state rather than feeling its way around blindly.
 
-### NewtonRaphsonSolver Integration
-The NewtonRaphsonSolver completely changes the mathematical approach used to solve your Ex6 problem. It upgrades your framework from a slow "guess-and-check" optimization strategy to a direct, high-speed mathematical root-finding strategy.
-Here is exactly how it helps solve the Ex6 problem (finding the force required to push the compliant four-bar mechanism by 5mm):
+### NewtonRaphsonSolver Integration (The KKT Matrix)
+The `NewtonRaphsonSolver` completely changes the mathematical approach. It upgrades the framework from a slow "guess-and-check" optimization strategy to a direct, high-speed mathematical root-finding strategy, acting as a **Constrained Multi-Variable FEA Solver**.
 
-**1. It Replaces "Guessing" with the Secant Method (The Outer Loop)**
-In the old DistanceAnalysis method, the solver used fminsearch to guess the required force. If it guessed 10N and the mechanism only moved 3mm, it blindly guessed another number until it hit 5mm.
-The NewtonRaphsonSolver (in the step method) uses a Secant Method instead. It physically tests the stiffness of the mechanism to make an educated calculation:
-* It applies the current force guess and sees where the mechanism goes.
-* It adds a tiny bit more force (dForce = 0.5 N) and sees how much further it moves.
-* By dividing the change in force by the change in displacement, it calculates the exact stiffness slope of your mechanism at that exact moment.
-* It then uses this slope to perfectly predict the exact force needed to hit your target displacement, usually converging in just 2 or 3 attempts.
+Instead of minimizing energy, it finds the roots (zeros) of the force residual equations ($\mathbf{R}(\mathbf{x}) = \mathbf{F}_{internal}(\mathbf{x}) - \mathbf{F}_{external} = 0$). Here is how it solves the Ex6 problem using the Newton-Raphson equation:
 
-**2. It Replaces Energy Minimization with Direct Matrix Math (The Inner Loop)**
-When applying a force to see how the mechanism deforms, the old LoadAnalysis used fmincon to search for the minimum potential energy state. Optimization algorithms are notoriously slow for structural mechanics.
-The NewtonRaphsonSolver (in the solveEquilibriumNR method) bypasses fmincon entirely:
-* It asks LoadAnalysis to hand over the exact Gradient (Internal Forces) and Hessian (Tangent Stiffness Matrix).
-* It combines these with the Kinematic Constraints (making sure the pin joints don't break) into a single matrix called the KKT (Karush-Kuhn-Tucker) Matrix.
-* It then solves the equilibrium state using standard linear algebra: `delta = KKT \ Residual`.
+**1. The Components of the Newton-Raphson Step**
+At every iteration, the solver pulls four exact analytical components from `LoadAnalysis` and `Kinematics`:
+*   **$g$ (The Gradient):** Internal spring forces (1st derivative of energy).
+*   **$H$ (The Hessian):** Tangent Stiffness Matrix (2nd derivative of energy).
+*   **$ceq$ (Kinematic Constraints):** Current error in joint connections.
+*   **$J$ (The Jacobian):** 1st derivative of the kinematic constraints.
+
+**2. Assembling the KKT Matrix & Residual**
+The solver assembles a massive KKT (Karush-Kuhn-Tucker) Matrix and a Residual vector to determine how far off the current guess is from perfect equilibrium:
+*   **KKT Matrix:** $\begin{bmatrix} \mathbf{H} & \mathbf{J}^T \\ \mathbf{J} & \mathbf{0} \end{bmatrix}$ (Top-left handles elastic stiffness, off-diagonals enforce rigid physical rules).
+*   **Residual:** $\begin{bmatrix} \mathbf{g} + \mathbf{J}^T \lambda \\ \mathbf{ceq} \end{bmatrix}$ (Top half checks force balance, bottom half checks if joints are sealed).
+
+The solver then executes the core Newton-Raphson update step using MATLAB's matrix left-division (`\`):
+$$ \begin{bmatrix} \Delta \mathbf{x} \\ \Delta \lambda \end{bmatrix} = - \mathbf{KKT} \setminus \mathbf{Residual} $$
+
+**3. The Magic of Displacement Control (Zero Guessing)**
+The most brilliant part of this solver is how it solves the **Inverse Statics Problem** (e.g., finding the force needed for a 5mm displacement) *without any outer guessing loop*. 
+
+When a target displacement is applied, the solver adds one extra row to the $\mathbf{J}$ matrix and one extra constraint to the $ceq$ vector representing that 5mm target. The external force parameter is explicitly set to `0`. When the Newton-Raphson loop finishes converging ($\mathbf{Residual} \approx 0$), **the required external force is simply plucked out of the $\lambda$ vector** as the Lagrange multiplier associated with that specific displacement constraint. This completely eliminates the outer `fminsearch` guessing loop, dropping calculation times drastically!

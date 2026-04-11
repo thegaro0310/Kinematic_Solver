@@ -40,6 +40,18 @@ classdef BcmBeam < Beam
             %get allows expansion or not
             ext=true;
         end
+
+        function energy=bcmEnergy(x,y,theta,t,L)
+            energy=(1.0./L.^2.*(t.^2.*y.^2.*2.1e3+y.^4.*7.92e2+L.^4.*theta.^4.*2.4e1+L.^2.*x.^2.*2.1e3+L.^3.*theta.^2.*x.*2.8e2-L.^3.*theta.^3.*y.*8.4e1+L.^2.*t.^2.*theta.^2.*7.0e2+L.^2.*theta.^2.*y.^2.*2.81e2-L.*theta.*y.^3.*3.24e2+L.*x.*y.^2.*2.52e3-L.*t.^2.*theta.*y.*2.1e3-L.^2.*theta.*x.*y.*4.2e2).*(3.0./2.0))./(t.^2.*5.25e2+y.^2.*9.0+L.^2.*theta.^2.*1.1e1-L.*theta.*y.*9.0);
+        end
+
+        function gradient= bcmGradient(x,y,theta,t,L)
+            gradient=[(L.*(x.*6.3e3-theta.*y.*6.3e2)+y.^2.*3.78e3+L.^2.*theta.^2.*4.2e2)./(L.*(t.^2.*5.25e2+y.^2.*9.0+L.^2.*theta.^2.*1.1e1-L.*theta.*y.*9.0));-1.0./L.^2.*1.0./(t.^2.*5.25e2+y.^2.*9.0+L.^2.*theta.^2.*1.1e1-L.*theta.*y.*9.0).^2.*(L.*(t.^4.*theta.*1.65375e6+theta.*y.^4.*3.645e4-t.^2.*x.*y.*3.969e6+t.^2.*theta.*y.^2.*7.6545e5)-t.^2.*y.^3.*2.4948e6+L.^3.*(t.^2.*theta.^3.*9.135e4+theta.^3.*y.^2.*1.86975e4-theta.*x.^2.*2.835e4-theta.^2.*x.*y.*7.56e4)-t.^4.*y.*3.3075e6+L.^4.*(theta.^3.*x.*3.15e3-theta.^4.*y.*8.625e3)-y.^5.*2.1384e4+L.^5.*theta.^5.*1.062e3+L.^2.*(theta.^2.*y.^3.*-6.102e4+x.^2.*y.*5.67e4+t.^2.*theta.*x.*3.3075e5+theta.*x.*y.^2.*2.835e4-t.^2.*theta.^2.*y.*4.92975e5));(1.0./(t.^2.*5.25e2+y.^2.*9.0+L.^2.*theta.^2.*1.1e1-L.*theta.*y.*9.0).^2.*(t.^2.*y.^3.*-5.67e4-t.^4.*y.*3.675e5+y.^5.*1.404e3+L.^5.*theta.^5.*1.76e2-L.^3.*theta.*x.^2.*1.54e4-L.^4.*theta.^4.*y.*5.24e2+L.^2.*x.^2.*y.*6.3e3+L.^3.*t.^2.*theta.^3.*1.68e4-L.^2.*theta.^2.*y.^3.*4.11e2+L.^3.*theta.^3.*y.^2.*7.92e2+L.*t.^4.*theta.*2.45e5-L.*theta.*y.^4.*4.122e3+L.*x.*y.^3.*6.3e3-L.^2.*t.^2.*theta.^2.*y.*3.85e4-L.*t.^2.*x.*y.*7.35e4+L.^2.*t.^2.*theta.*x.*9.8e4+L.*t.^2.*theta.*y.^2.*8.715e4-L.^2.*theta.*x.*y.^2.*1.68e4+L.^3.*theta.^2.*x.*y.*7.0e2).*(9.0./2.0))./L];
+        end
+
+        function hessian= bcmHessian(x,y,theta,t,L)
+            hessian=reshape([6.3e3./(t.^2.*5.25e2+y.^2.*9.0+L.^2.*theta.^2.*1.1e1-L.*theta.*y.*9.0),(1.0./(t.^2.*5.25e2+y.^2.*9.0+L.^2.*theta.^2.*1.1e1-L.*theta.*y.*9.0).^2.*(L.^2.*(theta.*x.*5.67e4+theta.^2.*y.*7.56e4)+t.^2.*y.*3.969e6-L.*(x.*y.*1.134e5+t.^2.*theta.*3.3075e5+theta.*y.^2.*2.835e4)-L.^3.*theta.^3.*3.15e3))./L,-1.0./(t.^2.*5.25e2+y.^2.*9.0+L.^2.*theta.^2.*1.1e1-L.*theta.*y.*9.0).^2.*(L.^2.*(theta.*x.*1.386e5-theta.^2.*y.*3.15e3)+t.^2.*y.*3.3075e5-L.*(x.*y.*5.67e4+t.^2.*theta.*4.41e5-theta.*y.^2.*7.56e4)-y.^3.*2.835e4),(1.0./(t.^2.*5.25e2+y.^2.*9.0+L.^2.*theta.^2.*1.1e1-L.*theta.*y.*9.0).^2.*(L.^2.*(theta.*x.*5.67e4+theta.^2.*y.*7.56e4)+t.^2.*y.*3.969e6-L.*(x.*y.*1.134e5+t.^2.*theta.*3.3075e5+theta.*y.^2.*2.835e4)-L.^3.*theta.^3.*3.15e3))./L,1.0./L.^2.*1.0./(t.^2.*5.25e2+y.^2.*9.0+L.^2.*theta.^2.*1.1e1-L.*theta.*y.*9.0).^3.*(t.^2.*y.^4.*1.12266e7+t.^4.*y.^2.*1.2800025e9+t.^6.*5.788125e8+y.^6.*6.4152e4+L.^6.*theta.^6.*2.5253e4+L.^5.*theta.^4.*x.*2.583e5-L.^5.*theta.^5.*y.*9.8496e4+L.^2.*t.^4.*theta.^2.*8.8475625e7+L.^4.*t.^2.*theta.^4.*2.76885e6-L.^2.*t.^2.*x.^2.*9.9225e6-L.^4.*theta.^2.*x.^2.*3.78e4+L.^2.*theta.^2.*y.^4.*4.2768e5-L.^3.*theta.^3.*y.^3.*6.05475e5+L.^4.*theta.^4.*y.^2.*5.93595e5+L.^2.*x.^2.*y.^2.*5.103e5+L.*t.^4.*x.*6.94575e8-L.*theta.*y.^5.*1.92456e5+L.^3.*t.^2.*theta.^2.*x.*2.57985e7-L.^3.*t.^2.*theta.^3.*y.*9.5823e6-L.^3.*theta.^2.*x.*y.^2.*6.804e5-L.*t.^4.*theta.*y.*2.3814e8+L.^2.*t.^2.*theta.^2.*y.^2.*5.5041525e7-L.*t.^2.*theta.*y.^3.*2.84067e7-L.*t.^2.*x.*y.^2.*3.5721e7+L.^2.*theta.*x.*y.^3.*1.701e5-L.^3.*theta.*x.^2.*y.*5.103e5+L.^4.*theta.^3.*x.*y.*5.67e4+L.^2.*t.^2.*theta.*x.*y.*5.9535e6).*3.0,(1.0./(t.^2.*5.25e2+y.^2.*9.0+L.^2.*theta.^2.*1.1e1-L.*theta.*y.*9.0).^3.*(t.^2.*y.^4.*-4.1958e6+t.^4.*y.^2.*7.938e7+t.^6.*1.929375e8-y.^6.*1.2636e4+L.^6.*theta.^6.*2.596e3-L.^5.*theta.^4.*x.*7.7e3-L.^5.*theta.^5.*y.*6.372e3+L.^2.*t.^4.*theta.^2.*1.9845e7+L.^4.*t.^2.*theta.^4.*3.962e5-L.^2.*t.^2.*x.^2.*3.3075e6+L.^4.*theta.^2.*x.^2.*2.079e5-L.^2.*theta.^2.*y.^4.*1.55115e5+L.^3.*theta.^3.*y.^3.*1.91925e5-L.^4.*theta.^4.*y.^2.*5.85e2+L.^2.*x.^2.*y.^2.*1.701e5+L.*t.^4.*x.*3.85875e7+L.*theta.*y.^5.*3.7908e4+L.*x.*y.^4.*5.67e4-L.^3.*t.^2.*theta.^2.*x.*1.323e6-L.^3.*t.^2.*theta.^3.*y.*1.7976e6-L.^3.*theta.^2.*x.*y.^2.*1.89e5-L.*t.^4.*theta.*y.*7.938e7+L.^2.*t.^2.*theta.^2.*y.^2.*1.478925e6+L.*t.^2.*theta.*y.^3.*9.7146e6-L.*t.^2.*x.*y.^2.*1.1907e7-L.^2.*theta.*x.*y.^3.*2.457e5-L.^3.*theta.*x.^2.*y.*6.111e5+L.^4.*theta.^3.*x.*y.*3.633e5+L.^2.*t.^2.*theta.*x.*y.*2.18295e7).*(-9.0./2.0))./L,-1.0./(t.^2.*5.25e2+y.^2.*9.0+L.^2.*theta.^2.*1.1e1-L.*theta.*y.*9.0).^2.*(L.^2.*(theta.*x.*1.386e5-theta.^2.*y.*3.15e3)+t.^2.*y.*3.3075e5-L.*(x.*y.*5.67e4+t.^2.*theta.*4.41e5-theta.*y.^2.*7.56e4)-y.^3.*2.835e4),(1.0./(t.^2.*5.25e2+y.^2.*9.0+L.^2.*theta.^2.*1.1e1-L.*theta.*y.*9.0).^3.*(t.^2.*y.^4.*-4.1958e6+t.^4.*y.^2.*7.938e7+t.^6.*1.929375e8-y.^6.*1.2636e4+L.^6.*theta.^6.*2.596e3-L.^5.*theta.^4.*x.*7.7e3-L.^5.*theta.^5.*y.*6.372e3+L.^2.*t.^4.*theta.^2.*1.9845e7+L.^4.*t.^2.*theta.^4.*3.962e5-L.^2.*t.^2.*x.^2.*3.3075e6+L.^4.*theta.^2.*x.^2.*2.079e5-L.^2.*theta.^2.*y.^4.*1.55115e5+L.^3.*theta.^3.*y.^3.*1.91925e5-L.^4.*theta.^4.*y.^2.*5.85e2+L.^2.*x.^2.*y.^2.*1.701e5+L.*t.^4.*x.*3.85875e7+L.*theta.*y.^5.*3.7908e4+L.*x.*y.^4.*5.67e4-L.^3.*t.^2.*theta.^2.*x.*1.323e6-L.^3.*t.^2.*theta.^3.*y.*1.7976e6-L.^3.*theta.^2.*x.*y.^2.*1.89e5-L.*t.^4.*theta.*y.*7.938e7+L.^2.*t.^2.*theta.^2.*y.^2.*1.478925e6+L.*t.^2.*theta.*y.^3.*9.7146e6-L.*t.^2.*x.*y.^2.*1.1907e7-L.^2.*theta.*x.*y.^3.*2.457e5-L.^3.*theta.*x.^2.*y.*6.111e5+L.^4.*theta.^3.*x.*y.*3.633e5+L.^2.*t.^2.*theta.*x.*y.*2.18295e7).*(-9.0./2.0))./L,1.0./(t.^2.*5.25e2+y.^2.*9.0+L.^2.*theta.^2.*1.1e1-L.*theta.*y.*9.0).^3.*(t.^2.*y.^4.*1.20015e6-t.^4.*y.^2.*2.0671875e7-t.^6.*6.43125e7+y.^6.*5.913e3-L.^6.*theta.^6.*9.68e2+L.^5.*theta.^5.*y.*2.376e3-L.^2.*t.^4.*theta.^2.*9.1875e6-L.^4.*t.^2.*theta.^4.*1.386e5+L.^2.*t.^2.*x.^2.*4.0425e6-L.^4.*theta.^2.*x.^2.*2.541e5-L.^2.*theta.^2.*y.^4.*7.8705e4+L.^3.*theta.^3.*y.^3.*8.475e3-L.^4.*theta.^4.*y.^2.*4.32e3+L.^2.*x.^2.*y.^2.*1.26e4-L.*t.^4.*x.*2.5725e7+L.*theta.*y.^5.*5.3136e4+L.*x.*y.^4.*1.89e4+L.^3.*t.^2.*theta.^2.*x.*1.617e6+L.^3.*t.^2.*theta.^3.*y.*2.023e5-L.^3.*theta.^2.*x.*y.^2.*2.772e5+L.*t.^4.*theta.*y.*1.1025e7+L.^2.*t.^2.*theta.^2.*y.^2.*5.87475e5-L.*t.^2.*theta.*y.^3.*1.0773e6+L.*t.^2.*x.*y.^2.*4.6305e6+L.^2.*theta.*x.*y.^3.*2.079e5+L.^3.*theta.*x.^2.*y.*2.079e5+L.^4.*theta.^3.*x.*y.*7.7e3-L.^2.*t.^2.*theta.*x.*y.*2.4255e6).*-9.0],[3,3]);
+        end
     end
     
     
@@ -103,21 +115,19 @@ classdef BcmBeam < Beam
             currentAngle=outputMatrix(beam.id)+beam.theta0;
             rotationMatrix=[-cos(currentAngle) sin(currentAngle);-sin(currentAngle) -cos(currentAngle)];
         end
-        
-%         function deltaTheta=getDeltaTheta(beam,outputMatrix,inputMatrix)
-%             %get the delta theta from the list of the bcm beams
-%             deltaTheta=outputMatrix(beam.id+3);
-%             %master angle
-%             if logical(inputMatrix(beam.id+1))
-%                 deltaTheta=deltaTheta-outputMatrix(beam.id);
-%             end
-%         end
-        
-        function deltaTheta=getDeltaTheta(beam)
+        function deltaTheta=getDeltaTheta(beam,outputMatrix,indexList)
             %get the delta theta from the list of the bcm beams
-            deltaTheta=beam.theta;
-            if logical(beam.index(1))
-                deltaTheta=deltaTheta-beam.masterAngle;
+            if nargin == 1
+                deltaTheta=beam.theta;
+                if logical(beam.index(1))
+                    deltaTheta=deltaTheta-beam.masterAngle;
+                end
+            else
+                deltaTheta=outputMatrix(beam.id+3);
+                %master angle
+                if logical(indexList(beam.id))
+                    deltaTheta=deltaTheta-outputMatrix(beam.id);
+                end
             end
         end
         
@@ -319,10 +329,17 @@ classdef BcmBeam < Beam
             currentDeltaX=outputMatrix(beam.id+1);
             currentDeltaY=outputMatrix(beam.id+2);
             %calculate energy
-            %energy=beam.e(beam.deltaX,beam.deltaY,deltaTheta,beam.crossSection.thickness....
-             %   ,beam.length0)*beam.crossSection.E*workspace.EFactor()*beam.crossSection.getI()/beam.length0*workspace.lengthFactor()^3;
-            energy=test(currentDeltaX,currentDeltaY,deltaTheta,beam.crossSection.thickness....
-                ,beam.length0)*beam.crossSection.E*workspace.EFactor()*beam.crossSection.getI()/beam.length0*workspace.lengthFactor()^3;
+            % energy=beam.e(beam.deltaX,beam.deltaY,deltaTheta,beam.crossSection.thickness....
+            %    ,beam.length0)*beam.crossSection.E*workspace.EFactor()*beam.crossSection.getI()/beam.length0*workspace.lengthFactor()^3;
+            % energy=test(currentDeltaX,currentDeltaY,deltaTheta,beam.crossSection.thickness....
+            %     ,beam.length0)*beam.crossSection.E*workspace.EFactor()*beam.crossSection.getI()/beam.length0*workspace.lengthFactor()^3;
+            I = beam.crossSection.getI();
+            E = beam.crossSection.E * workspace.EFactor();
+            t = beam.crossSection.thickness;
+            L = beam.length0;
+            
+            %calculate energy algebraically
+            energy=BcmBeam.bcmEnergy(currentDeltaX,currentDeltaY,deltaTheta,t,L)*E*I/L*workspace.lengthFactor()^3;
         end
         
         function gradient=getGradient(beam,outputMatrix,index,workspace)
@@ -333,11 +350,28 @@ classdef BcmBeam < Beam
             currentDeltaY=outputMatrix(beam.id+2);
             %beamGradient=beam.g(beam.deltaX,beam.deltaY,deltaTheta,beam.crossSection.thickness....
             %    ,beam.length0)*beam.crossSection.E*workspace.EFactor()*beam.crossSection.getI()/beam.length0*workspace.lengthFactor()^3;
-            beamGradient=test2(currentDeltaX,currentDeltaY,deltaTheta,beam.crossSection.thickness....
-                ,beam.length0)*beam.crossSection.E*workspace.EFactor()*beam.crossSection.getI()/beam.length0*workspace.lengthFactor()^3;
-            gradient(index(beam.id+1),1)=beamGradient(1);
-            gradient(index(beam.id+2),1)=beamGradient(2);
-            gradient(index(beam.id+3),1)=beamGradient(3);
+            % beamGradient=test2(currentDeltaX,currentDeltaY,deltaTheta,beam.crossSection.thickness....
+            %     ,beam.length0)*beam.crossSection.E*workspace.EFactor()*beam.crossSection.getI()/beam.length0*workspace.lengthFactor()^3;
+            % gradient(index(beam.id+1),1)=beamGradient(1);
+            % gradient(index(beam.id+2),1)=beamGradient(2);
+            % gradient(index(beam.id+3),1)=beamGradient(3);
+                        
+            I = beam.crossSection.getI();
+            E = beam.crossSection.E * workspace.EFactor();
+            t = beam.crossSection.thickness;
+            L = beam.length0;
+            
+            beamGradient=BcmBeam.bcmGradient(currentDeltaX,currentDeltaY,deltaTheta,t,L)*E*I/L*workspace.lengthFactor()^3;
+            
+            if logical(index(beam.id+1))
+                gradient(index(beam.id+1),1)=beamGradient(1);
+            end
+            if logical(index(beam.id+2))
+                gradient(index(beam.id+2),1)=beamGradient(2);
+            end
+            if logical(index(beam.id+3))
+                gradient(index(beam.id+3),1)=beamGradient(3);
+            end
             %update master angle
             if logical(index(beam.id))
                 gradient(index(beam.id),1)=-beamGradient(3);
@@ -351,8 +385,15 @@ classdef BcmBeam < Beam
             currentDeltaY=outputMatrix(beam.id+2);
             %beamHessian=beam.h(beam.deltaX,beam.deltaY,deltaTheta,beam.crossSection.thickness....
             %    ,beam.length0)*beam.crossSection.E*workspace.EFactor()*beam.crossSection.getI()/beam.length0*workspace.lengthFactor()^3;
-            beamHessian=test3(currentDeltaX,currentDeltaY,deltaTheta,beam.crossSection.thickness....
-                ,beam.length0)*beam.crossSection.E*workspace.EFactor()*beam.crossSection.getI()/beam.length0*workspace.lengthFactor()^3;
+            % beamHessian=test3(currentDeltaX,currentDeltaY,deltaTheta,beam.crossSection.thickness....
+            %     ,beam.length0)*beam.crossSection.E*workspace.EFactor()*beam.crossSection.getI()/beam.length0*workspace.lengthFactor()^3;
+                        
+            I = beam.crossSection.getI();
+            E = beam.crossSection.E * workspace.EFactor();
+            t = beam.crossSection.thickness;
+            L = beam.length0;
+            
+            beamHessian=BcmBeam.bcmHessian(currentDeltaX,currentDeltaY,deltaTheta,t,L)*E*I/L*workspace.lengthFactor()^3;
             i=[];j=[];v=[];
             %x-x
             if logical(index(beam.id+1))
@@ -525,4 +566,3 @@ classdef BcmBeam < Beam
     end
     
 end
-

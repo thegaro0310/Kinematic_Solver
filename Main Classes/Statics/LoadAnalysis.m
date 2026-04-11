@@ -193,7 +193,6 @@ classdef LoadAnalysis
             obj.runNumber=obj.runNumber+1;
         end
         
-        
         %update initialGuess
         function beams=updateInitialGuess(obj,beams)
             for i=1:length(beams)
@@ -401,7 +400,9 @@ classdef LoadAnalysis
                     [angle,index]=obj.static.kinematic.allBeams{obj.static.moments(i).link}.getAngle(obj.static.moments(i).distance);
                     magnitude=obj.static.moments(i).magnitude*obj.workspace.momentFactor() ;
                     forceEnergy=forceEnergy+magnitude*(angle-obj.static.moments(i).angle0)*power/100;
+                if index > 0
                     g(index,1)=g(index,1)-magnitude*power/100;
+                end
                 end
             end
             f=(energy-forceEnergy)/(obj.workspace.lengthFactor()*obj.workspace.forceFactor());
@@ -521,4 +522,3 @@ classdef LoadAnalysis
     end
     
 end
-

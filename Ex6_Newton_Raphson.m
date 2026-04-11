@@ -1,7 +1,6 @@
 clear all;
 close all;
-% addpath(genpath('D:\Project\BCM_Method_Ultilize_DAS_2D\DAS_2D_3D\version0_90\2DNEW\'));
-addpath(genpath('D:\Project\BCM_Method_Ultilize_DAS_2D\KHOI_2D\'));
+addpath(genpath('D:\Project\BCM_Method_Ultilize_DAS_2D\Kinematic_Solver\'));
 
 %% Workspace Initialization
 %first you need to create a workspace
@@ -47,8 +46,10 @@ end
 %convert all links to compliant
 prb3r = [0.1000 Inf Inf; 0.3500 3.5100 Inf; 0.4000 2.9900 Inf; 0.1500 2.5800 Inf;];
 for i=1:3
-    links(i) = links(i).makeCompliant(1, 0.5, 69, BeamType.PRB);
-    links(i).geometry.prbModel = prb3r;
+    % links(i) = links(i).makeCompliant(1, 0.5, 69, BeamType.PRB);
+    % links(i).geometry.prbModel = prb3r;
+    links(i) = links(i).makeCompliant(1, 0.5, 69, BeamType.CBCM);
+    links(i).geometry.segments = 1; % Use a single segment CBCM continuous element
 end
 
 %% Moments Initialization
@@ -74,17 +75,40 @@ computed_forces = zeros(numSteps,1);
 
 disp('Starting Custom Newton-Raphson Solver...');
 
+figure(1); % Figure for mechanism animation
+
+% Start timing the solver
+t_start = tic;
+
 % Run analysis for multiple steps
 for i = 1:numSteps
-    targetDisp = 5 * i / numSteps; % Target: move exactly 5mm overall
+    targetDisp = 2 * i / numSteps; % Target: move exactly 5mm overall
     
     % Step the solver to find the force required for the target displacement
-    [dispX, reqForce] = solver.step(targetDisp);
+    [dispX, reqForce] = solver.step(targetDisp, 'custom'); % Can be 'fsolve' or 'custom'
     
+    % Update the physical state of the mechanism for visualization
+    [newState, ~, ~] = loadSim.static.kinematic.findInputMatrix(solver.x_current, []);
+    for j = 1:length(loadSim.static.kinematic.allBeams)
+        loadSim.static.kinematic.allBeams{j} = loadSim.static.kinematic.allBeams{j}.updateBeam(newState, newState);
+    end
+    loadSim.static.nodes = loadSim.static.kinematic.updateNodes(newState);
+    loadSim.static.kinematic.nodes = loadSim.static.nodes;
+    
+    % Plot the mechanism
+    figure(1); cla; hold on; axis([-10 15 -10 10]);
+    loadSim.drawNoGUI(cla, 10, currentWorkspace, reqForce);
+    title(sprintf('Step %d: Target Displ = %.3f mm, Required Force = %.3f N', i, dispX, reqForce));
+    drawnow;
+
     displacements(i) = dispX;
     computed_forces(i) = reqForce;
     fprintf('Step %d: Required Force = %.3f N, Displaced = %.3f mm\n', i, reqForce, dispX);
 end
+
+% End timing the solver
+elapsedTime = toc(t_start);
+fprintf('Newton-Raphson Solver completed in %.3f seconds.\n', elapsedTime);
 
 % Plot Force-Displacement Curve
 figure(99);

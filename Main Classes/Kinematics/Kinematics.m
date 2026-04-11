@@ -836,19 +836,107 @@ classdef Kinematics
         end
         
         
-        function [ xValue,yValue]  = solveStaticEquations(obj,outputMatrix,equations)
-            j=1;
-            xValue=zeros(1, length(equations));
-            yValue=zeros(1, length(equations));
-            for i=1:length(equations)
-                xValue(i)=0;yValue(i)=0;
-                for k=1:length(equations(i).beamList)
+        function [xValue, yValue, gradient, hessian] = solveStaticEquations(obj, outputMatrix, equations, indexList)
+            if nargin < 4 || isempty(indexList)
+                indexList = zeros(length(outputMatrix), 1);
+            end
+
+            calcGradient = nargout >= 3;
+            calcHessian = nargout >= 4;
+            maxIdx = max(indexList);
+
+            j = 1;
+            xValue = zeros(1, length(equations));
+            yValue = zeros(1, length(equations));
+            
+            if calcGradient
+                gradient = zeros(maxIdx, length(equations) * 2);
+            else
+                gradient = [];
+            end
+            
+            if calcHessian
+                hessian = cell(1, length(equations) * 2);
+            else
+                hessian = [];
+            end
+
+            for i = 1:length(equations)
+                xValue(i) = 0;
+                yValue(i) = 0;
+                
+                if calcGradient
+                    gradientX = zeros(maxIdx, 1);
+                    gradientY = zeros(maxIdx, 1);
+                end
+                if calcHessian
+                    hessianX = sparse(maxIdx, maxIdx);
+                    hessianY = sparse(maxIdx, maxIdx);
+                end
+
+                for k = 1:length(equations(i).beamList)
                     if logical(equations(i).beamList(k))
-                        xValue(i)=xValue(i)+obj.allBeams{k}.getX(outputMatrix,equations(i).beamList(k)*100);
-                        yValue(i)=yValue(i)+obj.allBeams{k}.getY(outputMatrix,equations(i).beamList(k)*100);
+                        beam = obj.allBeams{k};
+                        dist = equations(i).beamList(k) * 100;
+                        
+                        % 1. Calculate X and Y positions
+                        xValue(i) = xValue(i) + beam.getX(outputMatrix, dist);
+                        yValue(i) = yValue(i) + beam.getY(outputMatrix, dist);
+                        
+                        % 2. Calculate Gradients
+                        if calcGradient
+                            try
+                                gX = beam.getGradientX(outputMatrix, indexList, dist);
+                                gY = beam.getGradientY(outputMatrix, indexList, dist);
+                            catch
+                                gX = beam.getGradientX(indexList, dist);
+                                gY = beam.getGradientY(indexList, dist);
+                            end
+                            
+                            % Pad gradient vectors to prevent dimension mismatch
+                            if maxIdx > 0 && size(gX, 1) < maxIdx
+                                gX(maxIdx, 1) = 0;
+                                gY(maxIdx, 1) = 0;
+                            end
+                            gradientX = gradientX + gX;
+                            gradientY = gradientY + gY;
+                        end
+                        
+                        % 3. Calculate Hessians
+                        if calcHessian
+                            try
+                                hX = beam.getHessianX(outputMatrix, indexList, dist);
+                                hY = beam.getHessianY(outputMatrix, indexList, dist);
+                            catch
+                                hX = beam.getHessianX(indexList, dist);
+                                hY = beam.getHessianY(indexList, dist);
+                            end
+                            
+                            % Pad hessian matrices
+                            if maxIdx > 0
+                                [rX, cX] = size(hX);
+                                if rX < maxIdx || cX < maxIdx
+                                    hX(maxIdx, maxIdx) = 0;
+                                    hY(maxIdx, maxIdx) = 0;
+                                end
+                            end
+                            hessianX = hessianX + hX;
+                            hessianY = hessianY + hY;
+                        end
                     end
                 end
-                j=j+2;
+                
+                % Assign to outputs
+                if calcGradient
+                    gradient(:, 2*i-1) = gradientX;
+                    gradient(:, 2*i) = gradientY;
+                end
+                if calcHessian
+                    hessian{1, 2*i-1} = hessianX;
+                    hessian{1, 2*i} = hessianY;
+                end
+                
+                j = j + 2;
             end
         end
         
@@ -1146,4 +1234,3 @@ classdef Kinematics
     
     
 end
-
